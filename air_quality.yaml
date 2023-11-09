@@ -20,7 +20,6 @@ wifi:
   ssid: "<WI-FI_SSID>"
   password: "<WI-FI_PASSWORD>"
 
-
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Air Quality Fallback Hotspot"
@@ -28,12 +27,26 @@ wifi:
 
 captive_portal:
 
-
 i2c:
   sda: 18
   scl: 19
   scan: true
   id: bus_a
+
+globals:
+
+  - id: esphome_sensitivity
+    type: float
+    initial_value: '36.5'
+    restore_value: yes
+
+  - id: esphome_volume
+    type: int
+
+  - id: sound_level
+    type: int[5]
+    initial_value: '{0, 20, 40, 60, 80}'
+
 
 sensor:  
   - platform: scd4x
@@ -105,6 +118,22 @@ sensor:
     update_interval: 2s
     lambda: return(map(id(esphome_volume),1,1024,0,100));
 
+  - platform: template
+    name: "Sound quality level"
+    update_interval: 10s
+    lambda: !lambda |-
+      unsigned int currentOutputLevel = 0 ;
+      unsigned int lb = endPointInput[ currentOutputLevel ] ;
+      unsigned int ub = endPointInput[ currentOutputLevel + 1 ] ;
+      if ( id(esphome_db).state < lb || id(esphome_db).state > ub ) {
+        unsigned int i;
+        for ( i = 0 ; i < 5 ; i++ ) {
+          if ( id(esphome_db).state >= id(sound_level)[i] && id(esphome_db).state <= id(sound_level)[i+1] ) break ;
+        }
+      currentOutputLevel = i ;
+      }
+      return currentOutputLevel + 1 ;
+
 number:
   - platform: template
     id: sensitivity_slider
@@ -119,13 +148,3 @@ number:
     set_action:
       then:
          lambda:  id(esphome_sensitivity) = x;
-         
-globals:
-
-  - id: esphome_sensitivity
-    type: float
-    initial_value: '36.5'
-    restore_value: yes
-
-  - id: esphome_volume
-    type: int
