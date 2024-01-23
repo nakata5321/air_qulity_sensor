@@ -43,26 +43,31 @@ globals:
   - id: esphome_volume
     type: int
 
-# provide here values for range
+# provide here values for range from 0 to 5
   - id: lux_level
     type: int[5]
     initial_value: '{0, 100, 200, 300, 400}'
 
   - id: sound_level
     type: int[5]
-    initial_value: '{0, 20, 40, 60, 80}'
+    initial_value: '{80, 70, 60, 50, 40}'
 
   - id: CO2_level
     type: int[5]
-    initial_value: '{0, 200, 400, 600, 800}'
+    initial_value: '{1200, 1000, 800, 600, 450}'
 
+# provide here values for range from 0 to 5 and back (1,2,3,4,5,4,3,2,1)
   - id: humidity_level
-    type: int[5]
-    initial_value: '{0, 20, 40, 60, 80}'
+    type: int[9]
+    initial_value: '{20, 25, 28, 30, 40, 50, 60, 70, 80}'
 
   - id: temp_level
-    type: int[5]
-    initial_value: '{0, 10, 15, 25, 35}'
+    type: int[9]
+    initial_value: '{0, 10, 12, 16, 18, 22, 25, 27, 30}'
+
+  - id: quality_level
+    type: int[9]
+    initial_value: '{1, 2, 3, 4, 5, 4, 3, 2, 1}'
 
 
 sensor:  
@@ -145,12 +150,12 @@ sensor:
     update_interval: 5s
     lambda: !lambda |-
       unsigned int currentOutputLevel = 0 ;
-      unsigned int lb = id(sound_level)[currentOutputLevel];
-      unsigned int ub = id(sound_level)[currentOutputLevel + 1];
+      unsigned int ub = id(sound_level)[currentOutputLevel];
+      unsigned int lb = id(sound_level)[currentOutputLevel + 1];
       if ( id(esphome_db).state < lb || id(esphome_db).state > ub ) {
         unsigned int i;
         for ( i = 0 ; i < 4 ; i++ ) {
-          if ( id(esphome_db).state >= id(sound_level)[i] && id(esphome_db).state <= id(sound_level)[i+1] ) break ;
+          if ( id(esphome_db).state >= id(sound_level)[i+1] && id(esphome_db).state <= id(sound_level)[i] ) break ;
         }
       currentOutputLevel = i ;
       }
@@ -161,12 +166,12 @@ sensor:
     update_interval: 5s
     lambda: !lambda |-
       unsigned int currentOutputLevel = 0 ;
-      unsigned int lb = id(CO2_level)[currentOutputLevel];
-      unsigned int ub = id(CO2_level)[currentOutputLevel + 1];
+      unsigned int ub = id(CO2_level)[currentOutputLevel];
+      unsigned int lb = id(CO2_level)[currentOutputLevel + 1];
       if ( id(scd4x_co2).state < lb || id(scd4x_co2).state > ub ) {
         unsigned int i;
         for ( i = 0 ; i < 4 ; i++ ) {
-          if ( id(scd4x_co2).state >= id(CO2_level)[i] && id(scd4x_co2).state <= id(CO2_level)[i+1] ) break ;
+          if ( id(scd4x_co2).state >= id(CO2_level)[i+1] && id(scd4x_co2).state <= id(CO2_level)[i] ) break ;
         }
       currentOutputLevel = i ;
       }
@@ -181,12 +186,12 @@ sensor:
       unsigned int ub = id(humidity_level)[currentOutputLevel + 1];
       if ( id(sht3xd_hum).state < lb || id(sht3xd_hum).state > ub ) {
         unsigned int i;
-        for ( i = 0 ; i < 4 ; i++ ) {
+        for ( i = 0 ; i < 8 ; i++ ) {
           if ( id(sht3xd_hum).state >= id(humidity_level)[i] && id(sht3xd_hum).state <= id(humidity_level)[i+1] ) break ;
         }
       currentOutputLevel = i ;
       }
-      return currentOutputLevel + 1 ;
+      return id(quality_level)[currentOutputLevel] ;
 
   - platform: template
     name: "temperature quality level"
@@ -197,12 +202,12 @@ sensor:
       unsigned int ub = id(temp_level)[currentOutputLevel + 1];
       if ( id(sht3xd_temp).state < lb || id(sht3xd_temp).state > ub ) {
         unsigned int i;
-        for ( i = 0 ; i < 4 ; i++ ) {
+        for ( i = 0 ; i < 8 ; i++ ) {
           if ( id(sht3xd_temp).state >= id(temp_level)[i] && id(sht3xd_temp).state <= id(temp_level)[i+1] ) break ;
         }
       currentOutputLevel = i ;
       }
-      return currentOutputLevel + 1 ;
+      return id(quality_level)[currentOutputLevel] ;
 
 number:
   - platform: template
